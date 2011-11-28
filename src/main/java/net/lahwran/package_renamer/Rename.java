@@ -73,6 +73,7 @@ public class Rename {
                 } else {
                     if (num != null) {
                         output.append(matcher.group(Integer.parseInt(num.toString())));
+                        num = null;
                     }
                     output.append(c);
                     escaped = false;
