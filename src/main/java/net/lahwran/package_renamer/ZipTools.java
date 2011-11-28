@@ -26,7 +26,6 @@ public class ZipTools {
         ZipFile zipfile = new ZipFile(zip);
 
         byte[] buffer = new byte[1024];
-        
         Enumeration<? extends ZipEntry> entries = zipfile.entries();
         //Get next zip entry and start reading data
         while (entries.hasMoreElements()) {

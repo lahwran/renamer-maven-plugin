@@ -108,8 +108,8 @@ public class Rename {
         return "Rename: "+from+" "+to+" "+((__re == null) ? "null" : __re);
     }
     
-    public static final Pattern packagepattern = Pattern.compile("^(.*?)\\.([^.]*)$");
-    public static final Pattern failedpackage = Pattern.compile("^()(.*)$");
+    public static final Pattern packagepattern = Pattern.compile("(.*?)\\.([^.]*)");
+    public static final Pattern failedpackage = Pattern.compile("()(.*)");
     public static String performRenames(Rename[] renames, String name) {
         boolean changed = false;
         for (int i=0; i<renames.length; i++) {
@@ -118,6 +118,9 @@ public class Rename {
                 Matcher m = packagepattern.matcher(name);
                 if (!m.matches()) {
                     m = failedpackage.matcher(name);
+                    if (!m.matches()) {
+                        continue;
+                    }
                 }
                 String pkg = m.group(1);
                 Matcher renamematch = rename.getRE().matcher(pkg);

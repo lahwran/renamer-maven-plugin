@@ -16,12 +16,25 @@ package net.lahwran.package_renamer;
  * limitations under the License.
  */
 
+import org.apache.maven.artifact.Artifact;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.project.MavenProject;
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.Map.Entry;
+
+import javassist.bytecode.ClassFile;
 
 /**
  * Goal which renames classes of a dependency and outputs them to the classes dir
@@ -29,41 +42,100 @@ import java.io.IOException;
  * 
  * @goal rename-dependencies
  * 
- * @phase compile
+ * @phase process-classes
  * @requiresDependencyResolution runtime
  */
 public class DependencyRenamerMojo extends AbstractMojo {
     /**
-     * Location of the file.
-     * 
+     * @parameter default-value="${project}"
+     * @readonly
+     * @required
+     */
+    private MavenProject project;
+
+    /**
      * @parameter expression="${project.build.directory}"
      * @required
      */
     private File outputDirectory;
+    
+    /**
+     * @parameter
+     * @required
+     */
+    private Rename[] renames;
+    
+    /**
+     * @parameter
+     */
+    private ArtifactMatcher refereceArtifacts;
 
     public void execute() throws MojoExecutionException {
-        File f = outputDirectory;
+        Set<Artifact> artifacts = null;
+        if (refereceArtifacts != null)
+            artifacts = refereceArtifacts.resolveArtifacts(project, getLog());
+        else
+            artifacts = new HashSet<Artifact>();
 
-        if (!f.exists()) {
-            f.mkdirs();
+        ArrayList<Rename> dynamiclist = new ArrayList<Rename>();
+        ArrayList<Rename> staticlist = new ArrayList<Rename>();
+        for(Rename rename:renames) {
+            if (rename.getDynamic()) {
+                dynamiclist.add(rename);
+            } else {
+                staticlist.add(rename);
+            }
         }
+        
+        Rename[] dynamicrenames = dynamiclist.toArray(new Rename[dynamiclist.size()]);
+        Rename[] staticrenames = staticlist.toArray(new Rename[staticlist.size()]);
+        RenamerClassMap renamermap = new RenamerClassMap(dynamicrenames, staticrenames);
+        
+        HashMap<String, File> toProcess = new HashMap<String, File>();
 
-        File touch = new File(f, "touch.txt");
-
-        FileWriter w = null;
-        try {
-            w = new FileWriter(touch);
-
-            w.write("touch.txt");
-        } catch (IOException e) {
-            throw new MojoExecutionException("Error creating file " + touch, e);
-        } finally {
-            if (w != null) {
-                try {
-                    w.close();
-                } catch (IOException e) {
-                    // ignore
+        File classdir = new File(outputDirectory, "classes");
+        classdir.mkdirs();
+        
+        for (Artifact artifact:artifacts) {
+            try {
+                ZipTools.extractZip(artifact.getFile(), classdir);
+            } catch (IOException e1) {
+                throw new MojoExecutionException("Error writing out dependency zip", e1);
+            }
+        }
+        
+        renamermap.addDirectory(classdir, toProcess);
+        
+        for(Entry<String, File> e:toProcess.entrySet())
+        {
+            String rename = (String) renamermap.get(e.getKey());
+            File in = e.getValue();
+            File out = in;
+            if(rename != null)
+                out = new File(classdir, rename+".class");
+            getLog().info("Processing "+e.getKey()+(rename != null ? " -> "+rename : ""));
+            if(!in.exists())
+            {
+                getLog().error(in.getAbsolutePath()+" MISSING! ********************");
+                continue;
+            }
+            try
+            {
+                ClassFile processing = new ClassFile(new DataInputStream(new FileInputStream(in)));
+                processing.renameClass(renamermap);
+                if(rename != null && out.exists())
+                {
+                    getLog().warn(in.getAbsolutePath()+" would overwrite " + out.getAbsolutePath() +" ********************");
+                    continue;
                 }
+                in.delete();
+                out.getParentFile().mkdirs();
+                processing.write(new DataOutputStream(new FileOutputStream(out)));
+            }
+            catch (IOException e1)
+            {
+                e1.printStackTrace();
+                continue;
             }
         }
     }

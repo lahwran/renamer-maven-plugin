@@ -77,7 +77,8 @@ public class ArtifactMatcher {
             boolean selected = isSelected(artifact);
             if (selected) {
                 File artifactFile = artifact.getFile();
-                log.info("+ Including " + artifact.getId() + " from file " + artifactFile.getName());
+                filteredArtifacts.add(artifact);
+                log.info("+ Including " + artifact.getId() + " from file " + artifactFile.getAbsolutePath());
             } else {
                 log.info("- Excluding " + artifact.getId());
             }

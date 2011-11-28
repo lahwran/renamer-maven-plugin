@@ -58,6 +58,8 @@ public class RenamerClassMap extends javassist.ClassMap {
         while (entries.hasMoreElements()) {
             ZipEntry entry = entries.nextElement();
             if (!entry.isDirectory()) {
+                if (!entry.getName().endsWith(".class"))
+                    continue;
                 String classname = entry.getName().substring(0,entry.getName().length()-6)
                         .replace("\\", "/");
                 String newname = Rename.performRenames(staticrenames, toJavaName(classname));
