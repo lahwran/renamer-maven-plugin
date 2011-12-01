@@ -93,7 +93,7 @@ public class PostRenamerMojo extends AbstractMojo {
         }
         
         for( RenameFile renameFile : renameFiles ) {
-            for(Rename rename:renameFile.getRenames()) {
+            for(Rename rename:renameFile.getRenames(this)) {
                 if (rename.getDynamic()) {
                     dynamiclist.add(rename);
                 } else {
