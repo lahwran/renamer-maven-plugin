@@ -68,6 +68,11 @@ public class PostRenamerMojo extends AbstractMojo {
     /**
      * @parameter
      */
+    private RenameFile[] renameFiles;
+    
+    /**
+     * @parameter
+     */
     private ArtifactMatcher refereceArtifacts;
 
     public void execute() throws MojoExecutionException {
@@ -84,6 +89,16 @@ public class PostRenamerMojo extends AbstractMojo {
                 dynamiclist.add(rename);
             } else {
                 staticlist.add(rename);
+            }
+        }
+        
+        for( RenameFile renameFile : renameFiles ) {
+            for(Rename rename:renameFile.getRenames()) {
+                if (rename.getDynamic()) {
+                    dynamiclist.add(rename);
+                } else {
+                    staticlist.add(rename);
+                }
             }
         }
         
