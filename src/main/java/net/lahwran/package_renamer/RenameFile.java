@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 import net.lahwran.package_renamer.config.Configuration;
 import net.lahwran.package_renamer.config.ConfigurationNode;
+import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 
 /**
@@ -32,13 +33,14 @@ public class RenameFile {
      */
     public String file;
     
-    public Rename[] getRenames() throws MojoExecutionException {
+    public Rename[] getRenames(AbstractMojo mojo) throws MojoExecutionException {
         
         File configFile = new File(this.file);
         if (!configFile.exists()) {
             throw new MojoExecutionException("Obfuscation file could not be read: " + configFile.getAbsolutePath());
         }
         
+        mojo.getLog().info("Reading obfuscation values from " + configFile.getAbsolutePath());
         Configuration conf = new Configuration(configFile);
         conf.load();
         
