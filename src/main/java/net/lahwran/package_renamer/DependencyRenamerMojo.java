@@ -126,8 +126,10 @@ public class DependencyRenamerMojo extends AbstractMojo {
             String rename = (String) renamermap.get(e.getKey());
             File in = e.getValue();
             File out = in;
-            if(rename != null)
+            if(rename != null) {
                 out = new File(classdir, rename+".class");
+                out.getParentFile().mkdirs();
+            }
             getLog().info("Processing "+e.getKey()+(rename != null ? " -> "+rename : ""));
             if(!in.exists())
             {
@@ -136,7 +138,9 @@ public class DependencyRenamerMojo extends AbstractMojo {
             }
             try
             {
-                ClassFile processing = new ClassFile(new DataInputStream(new FileInputStream(in)));
+                FileInputStream fileInputStream = new FileInputStream(in);
+                DataInputStream dataInputStream = new DataInputStream(fileInputStream);
+                ClassFile processing = new ClassFile(dataInputStream);
                 processing.renameClass(renamermap);
                 if(rename != null && out.exists())
                 {
@@ -144,8 +148,14 @@ public class DependencyRenamerMojo extends AbstractMojo {
                     continue;
                 }
                 in.delete();
-                out.getParentFile().mkdirs();
-                processing.write(new DataOutputStream(new FileOutputStream(out)));
+                FileOutputStream fileOutputStream = new FileOutputStream(out);
+                DataOutputStream dataOutputStream = new DataOutputStream(fileOutputStream);
+                processing.write(dataOutputStream);
+                
+                fileInputStream.close();
+                dataInputStream.close();
+                fileOutputStream.close();
+                dataOutputStream.close();
             }
             catch (IOException e1)
             {

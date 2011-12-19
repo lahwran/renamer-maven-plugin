@@ -66,7 +66,7 @@ public class Rename {
                     escaped = false;
                 } else if (c >= 49 && c <= 57) { //numeric
                     if (num == null) {
-                        num = new StringBuilder(c);
+                        num = new StringBuilder(String.valueOf(c));
                     } else {
                         num.append(c);
                     }
@@ -85,6 +85,13 @@ public class Rename {
                 output.append(c);
             }
         }
+        
+        //In case a replacement was the end of the line
+        if (num != null) {
+            output.append(matcher.group(Integer.parseInt(num.toString())));
+            num = null;
+        }
+        
         return output.toString();
     }
     
