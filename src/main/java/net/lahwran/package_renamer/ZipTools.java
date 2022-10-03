@@ -32,6 +32,10 @@ public class ZipTools {
             ZipEntry entry = entries.nextElement();
             
             File targfile = new File(targetdir, entry.getName());
+
+            if (!targfile.toPath().normalize().startsWith(targetdir.toPath().normalize())) {
+                throw new IOException("Bad zip entry");
+            }
             if (entry.isDirectory()) {
                 targfile.mkdirs();
             } else {
